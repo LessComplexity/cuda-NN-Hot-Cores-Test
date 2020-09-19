@@ -1,62 +1,11 @@
-# CUDA Neural Network Implementation
+# CUDA Hot Cores Test
+This project is a test to implement a concept called hot cores. Meaning that we want to keep the cuda cores hot and running a kernel all the time, doing nothing but waiting for the input to arrive, once it arrives the core runs the computation and goes back to wait for another input. This idea is meant to keep cuda cores working without re-running them to achieve better performance. A bonus is if we can make these hot cores be dynamic and be able to call different device functions as input too.
 
-It is a simple artificial neural network implementation using CUDA technology. This repository was created for the blog post available at [luniak.io/cuda-neural-network-implementation-part-1](http://luniak.io/cuda-neural-network-implementation-part-1) where much more information on this implementation can be found. It is just an educational implementation that has many performance issues and a lot can be improved.
+# Barriers To Implementation
+- *Thread execution timeout* exists in any OS to kill kernels that run too much time (that might contain an infinite loop), the only workaround to this is to change the execution timeout of CUDA cores in the OS, which may be unsafe.
+- *A thread can only wait for other threads in the same block*, to synchronize multiple block we would have to use the `cudaDeviceSynchronize()` function in the CPU and not GPU.
+- *There is no instruction to wait on data or flag changes* (accept for synchronization barriers that wait on threads themselves)
+- Synchronizing via global memory might take more time them re-uploading kernel code on demand.
 
-## Requirements and Technical Info
-
-This repository contains **Eclipse Nsight** project.
-
-To run this project **CUDA Toolkit** is required.
-
-During compilation **C++11** support has to be enabled.
-
-## Creating a Network
-
-In order to create new neural network you need to create a `NeuralNetwork` object and add some layers to it. Available layers are:
-
-- `LinearLayer`
-- `ReLUActivation`
-- `SigmoidActivation`
-
-Layers set can be easily expanded by creating new layers classes derived from `NNLayer` and implementing `forward()` and `backward()` methods. Additionally there is a `BCECost` class that implements _binary cross-entropy_ cost function. Below is an example of a simple network with two linear layers, one of them activated with _ReLU_ function and the last one with _sigmoid_ function.
-
-```cpp
-NeuralNetwork nn;
-nn.addLayer(new LinearLayer("linear_1", Shape(2, 30)));
-nn.addLayer(new ReLUActivation("relu_1"));
-nn.addLayer(new LinearLayer("linear_2", Shape(30, 1)));
-nn.addLayer(new SigmoidActivation("sigmoid_output"));
-```
-
-## Forward and Backward Pass
-
-`NeuralNetwork` class implements `forward()` and `backprop()` methods. In order to make a prediction with created neural network you should call `forward()` function with input data as an argument (as `Matrix` object). If you want to perform backpropagation and update network weights you should call `backprop()` function with two vectors (`Matrix` objects), one with predicted values and second one with target values. Below is an example of a network training.
-
-```cpp
-Matrix Y;
-for (int epoch = 0; epoch < 1001; epoch++) {
-  float cost = 0.0;
-
-  for (int batch = 0; batch < dataset.getNumOfBatches() - 1; batch++) {
-    Y = nn.forward(dataset.getBatches().at(batch));
-    nn.backprop(Y, dataset.getTargets().at(batch));
-    cost += bce_cost.cost(Y, dataset.getTargets().at(batch));
-  }
-
-  if (epoch % 100 == 0) {
-    std::cout << "Epoch: " << epoch
-              << ", Cost: " << cost / dataset.getNumOfBatches()
-              << std::endl;
-  }
-}
-```
-
-## Coordinates Dataset
-
-`CoordinatesDataset` class generates random points in 2D space and assign a class for each of them. Points that lies within 1st or 3rd quadrant have class `1` other points have class `0`. Points are stored in `baches` vector and class information in `targets` vector. During dataset creation one has to specify batch size and number of batches. 
-
-```cpp
-CoordinatesDataset dataset(100, 20);   // 20 batches, each containing 100 2D points
-std::vector<Matrix> batches = dataset.getBatches();
-std::vector<Matrix> targets = dataset.getTargets();
-```
+# Implementation High Overview
+While keeping in mind the implementation barriers, the implementation will be on a CUDA neural network implementation in C++ which was made by [pwlnk](https://github.com/pwlnk) in his [repository](https://github.com/pwlnk/cuda-neural-network). The implementation will be configured to use the concept of CUDA hot cores, and tested to see if any speedup was made. Still no clear idea of how the implementation should be made except for the barriers mentioned above.
