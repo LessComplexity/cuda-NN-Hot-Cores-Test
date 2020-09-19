@@ -7,5 +7,5 @@ This project is a test to implement a concept called hot cores. Meaning that we 
 - *There is no instruction to wait on data or flag changes* (accept for synchronization barriers that wait on threads themselves)
 - Synchronizing via global memory might take more time them re-uploading kernel code on demand.
 
-# Implementation High Overview
+# Implementation High Level Overview
 While keeping in mind the implementation barriers, the implementation will be on a CUDA neural network implementation in C++ which was made by [pwlnk](https://github.com/pwlnk) in his [repository](https://github.com/pwlnk/cuda-neural-network). The implementation will be configured to use the concept of CUDA hot cores, and tested to see if any speedup was made. Still no clear idea of how the implementation should be made except for the barriers mentioned above.
